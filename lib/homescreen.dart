@@ -1,8 +1,6 @@
-import 'package:dynamic_height_grid_view/dynamic_height_grid_view.dart';
 import 'package:flutter/material.dart';
 import 'package:notes_database_wslc_147/dbhelper.dart';
 import 'package:notes_database_wslc_147/uihelper.dart';
-
 import 'notesmodel.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,59 +14,25 @@ class _HomeScreenState extends State<HomeScreen> {
   TextEditingController titleController = TextEditingController();
   TextEditingController descController = TextEditingController();
   late DbHelper mydb;
-  List<NotesModel>arrNotes=[];
-
-  final color=[
-    Colors.red,
-    Colors.blue,
-    Colors.pink,
-    Colors.black,
-    Colors.yellow,
-    Colors.amber,
-    Colors.purple,
-    Colors.red,
-    Colors.blue,
-    Colors.pink,
-    Colors.black,
-    Colors.yellow,
-    Colors.amber,
-    Colors.purple,
-  ];
-
-  final heights=[
-    100,
-    200,
-    140,
-    170,
-    190,
-    100,
-    200,
-    140,
-    170,
-    190,
-
-  ];
+  List<NotesModel> arrNotes = [];
   @override
   void initState() {
     super.initState();
-    mydb=DbHelper.db;
+    mydb = DbHelper.db;
     getNotes();
   }
 
-  void getNotes()async{
-    arrNotes=await mydb.fetchNotes();
-    setState(() {
-
-    });
+  void getNotes() async {
+    arrNotes = await mydb.fetchNotes();
+    setState(() {});
   }
 
-  void addNotes(String title,String desc)async{
-    bool check=await mydb.addNotes(NotesModel(title: title, description: desc));
-    if(check){
-      arrNotes=await mydb.fetchNotes();
-      setState(() {
-
-      });
+  void addNotes(String title, String desc) async {
+    bool check =
+        await mydb.addNotes(NotesModel(title: title, description: desc));
+    if (check) {
+      arrNotes = await mydb.fetchNotes();
+      setState(() {});
     }
   }
 
@@ -79,31 +43,58 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text("HomeScreen"),
         centerTitle: true,
       ),
-      body: DynamicHeightGridView(builder: (ctx,index){
-        color.shuffle();
-        heights.shuffle();
-        return Container(
-          height: heights.first.toDouble(),
-          color: color.first,
-          child: ListTile(
-            leading: CircleAvatar(
-              child: Text("${arrNotes[index].noteid.toString()}"),
+      body: ListView.builder(
+        itemBuilder: (context, index) {
+          return InkWell(
+            onTap: () {
+              titleController.text = arrNotes[index].title;
+              descController.text = arrNotes[index].description;
+              showModalBottomSheet(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return Container(
+                      height: 400,
+                      width: 320,
+                      child: Column(
+                        children: [
+                          UiHelper.CustomTextField(
+                              titleController, 'Title', Icons.abc),
+                          UiHelper.CustomTextField(
+                              descController, 'Desc', Icons.abc),
+                          ElevatedButton(
+                              onPressed: () {
+                                var Utitle = titleController.text.toString();
+                                var Udesc = descController.text.toString();
+                                mydb.UpdateNotes(NotesModel(
+                                    noteid: arrNotes[index].noteid,
+                                    title: Utitle,
+                                    description: Udesc));
+                                getNotes();
+                                Navigator.pop(context);
+                              },
+                              child: Text('Update'))
+                        ],
+                      ),
+                    );
+                  });
+            },
+            child: ListTile(
+              leading: CircleAvatar(
+                child: Text("${arrNotes[index].noteid.toString()}"),
+              ),
+              title: Text("${arrNotes[index].title.toString()}"),
+              subtitle: Text("${arrNotes[index].description.toString()}"),
+              trailing: InkWell(
+                  onTap: () async {
+                    await mydb.DeleteNotes(arrNotes[index].noteid!);
+                    getNotes();
+                  },
+                  child: Icon(Icons.delete)),
             ),
-            title: Text("${arrNotes[index].title.toString()}"),
-            subtitle: Text("${arrNotes[index].description.toString()}"),
-          ),
-        );
-      }, itemCount: arrNotes.length, crossAxisCount: 3),
-      // body: ListView.builder(itemBuilder: (context,index){
-      //   return ListTile(
-      //     leading: CircleAvatar(
-      //       child: Text("${arrNotes[index].noteid.toString()}"),
-      //     ),
-      //     title: Text("${arrNotes[index].title.toString()}"),
-      //     subtitle: Text("${arrNotes[index].description.toString()}"),
-      //     trailing: Icon(Icons.delete),
-      //   );
-      // },itemCount: arrNotes.length,),
+          );
+        },
+        itemCount: arrNotes.length,
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           _bottomSheet();
@@ -112,6 +103,10 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+  //
+  // _updateSheet(int index) {
+  //   return
+  // }
 
   _bottomSheet() {
     return showModalBottomSheet(
@@ -133,7 +128,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 330,
                   child: ElevatedButton(
                       onPressed: () {
-                        addNotes(titleController.text.toString(), descController.text.toString());
+                        addNotes(titleController.text.toString(),
+                            descController.text.toString());
+                        Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
